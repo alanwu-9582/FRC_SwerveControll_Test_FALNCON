@@ -1,46 +1,43 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.lib;
 
 import com.ctre.phoenix.motorcontrol.StatorCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import edu.wpi.first.math.util.Units;
 
 public class LazyTalonFX extends TalonFX {
-
     private final double gearRatio;
+
     public LazyTalonFX(int deviceNumber, double gearRatio) {
         super(deviceNumber);
-    //         if the motor is for chassis, won't set the current limit.
-        setCurrent(false);
+        // If the motor is for chassis, we won't set a high current limit.
+        this.setCurrentLimit(false);
         this.gearRatio = gearRatio;
     }
 
-
-    public void setCurrent(boolean isHighCurrent) {
-         if (isHighCurrent){
-             configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 35, 40, 0.2));
-             configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 35, 40, 0.2));
-         } else {
-             configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, 25, 30, 0.2));
-             configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 25, 30, 0.2));
-//             configStatorCurrentLimit(new StatorCurrentLimitConfiguration(true, 100, 120, 0));
-         }
+    public void setCurrentLimit(boolean isLimitHigh) {
+        double currentLimit = isLimitHigh ? 35.0 : 25.0;
+        double thresholdCurrent = isLimitHigh ? 40.0 : 30.0;
+        double thresholdTime = 0.2;
+        var supplyConfig = new SupplyCurrentLimitConfiguration(true, currentLimit, thresholdCurrent, thresholdTime);
+        var statorConfig = new StatorCurrentLimitConfiguration(true, currentLimit, thresholdCurrent, thresholdTime);
+        this.configSupplyCurrentLimit(supplyConfig);
+        this.configStatorCurrentLimit(statorConfig);
     }
 
-    public void setRadPosition(double rad) {
-        setSelectedSensorPosition(rad / (2 * Math.PI) * (2048. / gearRatio));
+    public void setRadPosition(double radian) {
+        double rotation = Units.radiansToRotations(radian);
+        this.setSelectedSensorPosition(rotation * (2048.0 / this.gearRatio));
     }
 
     public double getVelocityAsMPS(double circumference) {
-        double motorRPM = getSelectedSensorVelocity() * (600. / 2048.);
-        double mechRPM = motorRPM * gearRatio;
-        return (mechRPM * circumference) / 60;
+        double motorRPM = getSelectedSensorVelocity() * (600.0 / 2048.0);
+        double mechRPM = motorRPM * this.gearRatio;
+        return mechRPM * circumference / 60.0;
     }
 
     public double getPositionAsRad() {
-        return getSelectedSensorPosition() / (2048 / gearRatio) * 2 * Math.PI;
+        double radian = Units.rotationsToRadians(this.getSelectedSensorPosition());
+        return radian / (2048.0 / this.gearRatio);
     }
 }

@@ -1,6 +1,6 @@
 package frc.robot;
 
-public class robotMap {
+public class RobotMap {
     public static final int kFrontLeftDriveMotorPort = 2;
     public static final int kBackLeftDriveMotorPort = 5;
     public static final int kFrontRightDriveMotorPort = 4;
