@@ -5,7 +5,6 @@
 package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
-
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -15,123 +14,97 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
-import frc.robot.robotMap;
+import frc.robot.RobotMap;
 
 public class SwerveSubsystem extends SubsystemBase {
-  private final SwerveModule frontLeft = new SwerveModule(
-    robotMap.kFrontLeftDriveMotorPort,
-    robotMap.kFrontLeftTurningMotorPort,
-    DriveConstants.kFrontLeftDriveEncoderReversed,
-    DriveConstants.kFrontLeftTurningEncoderReversed,
-    robotMap.kFrontLeftDriveAbsoluteEncoderPort,
-    DriveConstants.kFrontLeftDriveAbsoluteEncoderOffsetRad,
-    DriveConstants.kFrontLeftDriveAbsoluteEncoderReversed);
+    private final SwerveModule frontLeft = new SwerveModule(RobotMap.kFrontLeftDriveMotorPort, RobotMap.kFrontLeftTurningMotorPort, DriveConstants.kFrontLeftDriveEncoderReversed, DriveConstants.kFrontLeftTurningEncoderReversed, RobotMap.kFrontLeftDriveAbsoluteEncoderPort, DriveConstants.kFrontLeftDriveAbsoluteEncoderOffsetRad, DriveConstants.kFrontLeftDriveAbsoluteEncoderReversed);
 
-  private final SwerveModule frontRight = new SwerveModule(
-    robotMap.kFrontRightDriveMotorPort,
-    robotMap.kFrontRightTurningMotorPort,
-    DriveConstants.kFrontRightDriveEncoderReversed,
-    DriveConstants.kFrontRightTurningEncoderReversed,
-    robotMap.kFrontRightDriveAbsoluteEncoderPort,
-    DriveConstants.kFrontRightDriveAbsoluteEncoderOffsetRad,
-    DriveConstants.kFrontRightDriveAbsoluteEncoderReversed);
+    private final SwerveModule frontRight = new SwerveModule(RobotMap.kFrontRightDriveMotorPort, RobotMap.kFrontRightTurningMotorPort, DriveConstants.kFrontRightDriveEncoderReversed, DriveConstants.kFrontRightTurningEncoderReversed, RobotMap.kFrontRightDriveAbsoluteEncoderPort, DriveConstants.kFrontRightDriveAbsoluteEncoderOffsetRad, DriveConstants.kFrontRightDriveAbsoluteEncoderReversed);
 
-  private final SwerveModule backLeft = new SwerveModule(
-    robotMap.kBackLeftDriveMotorPort,
-    robotMap.kBackLeftTurningMotorPort,
-    DriveConstants.kBackLeftDriveEncoderReversed,
-    DriveConstants.kBackLeftTurningEncoderReversed,
-    robotMap.kBackLeftDriveAbsoluteEncoderPort,
-    DriveConstants.kBackLeftDriveAbsoluteEncoderOffsetRad,
-    DriveConstants.kBackLeftDriveAbsoluteEncoderReversed);
+    private final SwerveModule backLeft = new SwerveModule(RobotMap.kBackLeftDriveMotorPort, RobotMap.kBackLeftTurningMotorPort, DriveConstants.kBackLeftDriveEncoderReversed, DriveConstants.kBackLeftTurningEncoderReversed, RobotMap.kBackLeftDriveAbsoluteEncoderPort, DriveConstants.kBackLeftDriveAbsoluteEncoderOffsetRad, DriveConstants.kBackLeftDriveAbsoluteEncoderReversed);
 
-  private final SwerveModule backRight = new SwerveModule(
-    robotMap.kBackRightDriveMotorPort,
-    robotMap.kBackRightTurningMotorPort,
-    DriveConstants.kBackRightDriveEncoderReversed,
-    DriveConstants.kBackRightTurningEncoderReversed,
-    robotMap.kBackRightDriveAbsoluteEncoderPort,
-    DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
-    DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
+    private final SwerveModule backRight = new SwerveModule(RobotMap.kBackRightDriveMotorPort, RobotMap.kBackRightTurningMotorPort, DriveConstants.kBackRightDriveEncoderReversed, DriveConstants.kBackRightTurningEncoderReversed, RobotMap.kBackRightDriveAbsoluteEncoderPort, DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad, DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
 
-  private final AHRS gyro = new AHRS(SPI.Port.kMXP);
-  private final SwerveDrivePoseEstimator SwerveEstimator = new SwerveDrivePoseEstimator(DriveConstants.kDriveKinematics, getRotation2d(), new SwerveModulePosition[]{
-    frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()
-  }, new Pose2d());
-  private final Field2d field = new Field2d();
+    private final AHRS gyro = new AHRS(SPI.Port.kMXP);
+    private final SwerveDrivePoseEstimator SwerveEstimator = new SwerveDrivePoseEstimator(DriveConstants.kDriveKinematics, getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()}, new Pose2d());
+    private final Field2d field = new Field2d();
 
-  public SwerveSubsystem() {
-    new Thread(() -> {
-        try {
-            Thread.sleep(1000);
-            zeroHeading();
-            resetEncoders();
-        } catch (Exception e) {
-        }
-    }).start();
-  }
+    public SwerveSubsystem() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000);
+                zeroHeading();
+                resetEncoders();
+            } catch (Exception ignored) {}
+        }).start();
+    }
 
-  public void zeroHeading() {
-      gyro.reset();
-  }
+    public void zeroHeading() {
+        gyro.reset();
+    }
 
-  public double getHeading() {
-    return Math.IEEEremainder(gyro.getAngle(), 360);
-  }
+    public double getHeading() {
+        return Math.IEEEremainder(gyro.getAngle(), 360);
+    }
 
-  public Rotation2d getRotation2d() {
-    return Rotation2d.fromDegrees(getHeading());
-  }
+    public Rotation2d getRotation2d() {
+        return Rotation2d.fromDegrees(getHeading());
+    }
 
-  public Pose2d getPose() {
-    return SwerveEstimator.getEstimatedPosition();
-  }
+    public Pose2d getPose() {
+        return SwerveEstimator.getEstimatedPosition();
+    }
 
-  public double getPitch() {
-    return gyro.getPitch();
-  }
+    public double getPitch() {
+        return gyro.getPitch();
+    }
 
-  public void resetOdometry(Pose2d pose) {
-    SwerveEstimator.resetPosition(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()}, pose);
-  }
+    public void resetOdometry(Pose2d pose) {
+        SwerveEstimator.resetPosition(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()}, pose);
+    }
 
-  @Override
-  public void periodic() {
-      SwerveEstimator.update(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()});
-      // var gloabalPose = vision.getEstimatedGlobalPose();
-      // if (vision.hasTarget()) SwerveEstimator.addVisionMeasurement(gloabalPose.get().getFirst(), gloabalPose.get().getSecond());
-      SmartDashboard.putNumber("Robot Heading", getHeading());
-      SmartDashboard.putNumber("Robot Pitch", getPitch());
-      SmartDashboard.putData(field);
-      field.setRobotPose(getPose());
-      backLeft.putDashboard();
-      backRight.putDashboard();
-      frontLeft.putDashboard();
-      frontRight.putDashboard();
-  }
+    @Override
+    public void periodic() {
+        SwerveEstimator.update(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()});
+        // var gloabalPose = vision.getEstimatedGlobalPose();
+        // if (vision.hasTarget()) SwerveEstimator.addVisionMeasurement(gloabalPose.get().getFirst(), gloabalPose.get().getSecond());
+        SmartDashboard.putNumber("Robot Heading", getHeading());
+        SmartDashboard.putNumber("Robot Pitch", getPitch());
+        SmartDashboard.putData(field);
+        field.setRobotPose(getPose());
+        backLeft.putDashboard();
+        backRight.putDashboard();
+        frontLeft.putDashboard();
+        frontRight.putDashboard();
+    }
 
-  public void stopModules() {
-      frontLeft.stop();
-      frontRight.stop();
-      backLeft.stop();
-      backRight.stop();
-  }
+    public void stopModules() {
+        frontLeft.stop();
+        frontRight.stop();
+        backLeft.stop();
+        backRight.stop();
+    }
 
-  public void resetEncoders() {
-      frontLeft.resetEncoders();
-      frontRight.resetEncoders();
-      backLeft.resetEncoders();
-      backRight.resetEncoders();
-  }
+    public void resetEncoders() {
+        frontLeft.resetEncoders();
+        frontRight.resetEncoders();
+        backLeft.resetEncoders();
+        backRight.resetEncoders();
+    }
 
-  public void setModuleStates(SwerveModuleState[] desiredStates) {
-      SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
-      frontLeft.setDesiredState(desiredStates[0]);
-      frontRight.setDesiredState(desiredStates[1]);
-      backLeft.setDesiredState(desiredStates[2]);
-      backRight.setDesiredState(desiredStates[3]);
-  }
+    public void setModuleStates(SwerveModuleState[] desiredStates) {
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
+        frontLeft.setDesiredState(desiredStates[0]);
+        frontRight.setDesiredState(desiredStates[1]);
+        backLeft.setDesiredState(desiredStates[2]);
+        backRight.setDesiredState(desiredStates[3]);
+    }
 
+    public Command getResetGyroCommand() {
+        return Commands.runOnce(this::zeroHeading, this);
+    }
 }
