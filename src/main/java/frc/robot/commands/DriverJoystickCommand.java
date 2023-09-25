@@ -15,15 +15,15 @@ import java.util.function.Supplier;
 public class DriverJoystickCommand extends CommandBase {
     private final SwerveSubsystem swerveSubsystem;
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
-    private final Supplier<Boolean> fieldOrientedFunction;
+    private final Boolean fieldOriented;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
 
-    public DriverJoystickCommand(SwerveSubsystem swerveSubsystem, Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction, Supplier<Boolean> fieldOrientedFunction) {
+    public DriverJoystickCommand(SwerveSubsystem swerveSubsystem, Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction, Boolean fieldOriented) {
         this.swerveSubsystem = swerveSubsystem;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
         this.turningSpdFunction = turningSpdFunction;
-        this.fieldOrientedFunction = fieldOrientedFunction;
+        this.fieldOriented = fieldOriented;
         this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
         this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
         this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
@@ -36,7 +36,7 @@ public class DriverJoystickCommand extends CommandBase {
     @Override
     public void execute() {
         // Get input
-        double xSpeed = xSpdFunction.get();
+        double xSpeed = -xSpdFunction.get();
         double ySpeed = ySpdFunction.get();
         double rotation = turningSpdFunction.get();
 
@@ -51,7 +51,7 @@ public class DriverJoystickCommand extends CommandBase {
         rotation = turningLimiter.calculate(rotation) * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
 
         // Construct desired chassis speeds
-        ChassisSpeeds chassisSpeeds = this.fieldOrientedFunction.get()
+        ChassisSpeeds chassisSpeeds = this.fieldOriented
                 ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rotation, this.swerveSubsystem.getRotation2d())
                 : new ChassisSpeeds(xSpeed, ySpeed, rotation);
 
