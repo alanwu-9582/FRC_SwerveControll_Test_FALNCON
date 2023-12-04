@@ -1,7 +1,11 @@
 package frc.robot;
 
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.util.Units;
 
 public final class Constants {
@@ -21,7 +25,37 @@ public final class Constants {
 
     }
 
+    public static final class AutoConstants {
+        public static final double kMaxSpeedMetersPerSecond = DriveConstants.kPhysicalMaxSpeedMetersPerSecond / 3;
+        public static final double kMaxAngularSpeedRadiansPerSecond = DriveConstants.kPhysicalMaxAngularSpeedRadiansPerSecond / 5;
+        public static final double kMaxAccelerationMetersPerSecondSquared = 2;
+
+        public static final double kPathingX_kP = 0;
+        public static final double kPathingX_kI = 0;
+        public static final double kPathingX_kD = 0;
+
+        public static final double kPathingY_kP = 0;
+        public static final double kPathingY_kI = 0;
+        public static final double kPathingY_kD = 0;
+
+        public static final double kPathingTurning_kP = 0;
+        public static final double kPathingTurning_kI = 0;
+        public static final double kPathingTurning_kD = 0;
+
+        public static double kCorrectPositionXController = 0;
+        public static double kCorrectPositionYController = 0;
+        public static double kCorrectPositionThetaController = 0;
+
+        public static final TrapezoidProfile.Constraints kDriveControllerConstraints = //
+            new TrapezoidProfile.Constraints(kMaxSpeedMetersPerSecond, kMaxAccelerationMetersPerSecondSquared);
+
+        public static final TrapezoidProfile.Constraints kThetaControllerConstraints = //
+            new TrapezoidProfile.Constraints(kMaxAngularSpeedRadiansPerSecond, kMaxAccelerationMetersPerSecondSquared);
+        
+    }
+
     public static final class DriveConstants {
+        public static final boolean fieldOriented = true;
 
         public static final double kTrackWidth = Units.inchesToMeters(24);
         // Distance between right and left wheels
@@ -57,5 +91,31 @@ public final class Constants {
                 kPhysicalMaxAngularSpeedRadiansPerSecond / 4;
         public static final double kTeleDriveMaxAccelerationUnitsPerSecond = 3;
         public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 3;
+    }
+
+    public static final class VisionConstants {
+        public static final Transform3d Tag2Goal =
+        new Transform3d(
+                new Translation3d(-DriveConstants.kTrackWidth / 2, 0, 0),
+                new Rotation3d(0, 0, 0));
+
+        public static final double klimelightLensHeightInches = Units.metersToInches(43 / 100);
+        public static final double kgoalHeightInches = Units.metersToInches(68.9 / 100);
+        public static final double klimelightMountAngleDegrees = 0;
+        public static final double klimelightHorizontalOffsetInches = Units.metersToInches(26.9 / 100); // lenght from limelight to the center of robot
+
+        public static final double kAutoTrackP = 0.4;
+        public static final double kAutoTrackI = 0.0;
+        public static final double kAutoTrackD = 0.0;
+
+        public static double kAutoTrackRotationP = 0.01;
+        public static double kAutoTrackRotationI = 0.0;
+        public static double kAutoTrackRotationD = 0.0;
+
+        // public static final double kAutotrackMaxSpeed = 1.0; //use tanh
+        // public static final double kAutotrackIncreaseSpeed = 0.7; //use tanh
+        // public static final double kAutotrackRotationIncreaseSpeed = 0.15; //use tanh
+
+
     }
 }

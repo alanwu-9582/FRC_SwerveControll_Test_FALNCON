@@ -6,8 +6,10 @@ package frc.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
@@ -33,7 +35,13 @@ public class SwerveSubsystem extends SubsystemBase {
     private final SwerveDrivePoseEstimator SwerveEstimator = new SwerveDrivePoseEstimator(DriveConstants.kDriveKinematics, getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()}, new Pose2d());
     private final Field2d field = new Field2d();
 
+    private final SlewRateLimiter xLimiter, yLimiter, turningLimiter;
+
     public SwerveSubsystem() {
+        this.xLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
+        this.yLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
+        this.turningLimiter = new SlewRateLimiter(DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
+
         new Thread(() -> {
             try {
                 Thread.sleep(1000);
@@ -67,21 +75,6 @@ public class SwerveSubsystem extends SubsystemBase {
         SwerveEstimator.resetPosition(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()}, pose);
     }
 
-    @Override
-    public void periodic() {
-        SwerveEstimator.update(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()});
-        // var gloabalPose = vision.getEstimatedGlobalPose();
-        // if (vision.hasTarget()) SwerveEstimator.addVisionMeasurement(gloabalPose.get().getFirst(), gloabalPose.get().getSecond());
-        SmartDashboard.putNumber("Robot Heading", getHeading());
-        SmartDashboard.putNumber("Robot Pitch", getPitch());
-        SmartDashboard.putData(field);
-        field.setRobotPose(getPose());
-        backLeft.putDashboard();
-        backRight.putDashboard();
-        frontLeft.putDashboard();
-        frontRight.putDashboard();
-    }
-
     public void stopModules() {
         frontLeft.stop();
         frontRight.stop();
@@ -104,7 +97,45 @@ public class SwerveSubsystem extends SubsystemBase {
         backRight.setDesiredState(desiredStates[3]);
     }
 
+    public void move(Double xSpeed, Double ySpeed, Double rotation, boolean fieldOriented) {
+        
+        xSpeed = xLimiter.calculate(xSpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
+        ySpeed = yLimiter.calculate(ySpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
+        rotation = turningLimiter.calculate(rotation) * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+
+        // Construct desired chassis speeds
+        ChassisSpeeds chassisSpeeds = fieldOriented
+                ? ChassisSpeeds.fromFieldRelativeSpeeds(ySpeed, xSpeed, rotation, getRotation2d())
+                : new ChassisSpeeds(ySpeed, xSpeed, rotation);
+
+        // Convert chassis speeds to individual module states
+        SwerveModuleState[] moduleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
+        setModuleStates(moduleStates);
+    }
+
     public Command getResetGyroCommand() {
         return Commands.runOnce(this::zeroHeading, this);
+    }
+
+    public void lockModules() {
+        frontLeft.lockModule();
+        frontRight.lockModule();
+        backLeft.lockModule();
+        backRight.lockModule();
+    }
+
+    @Override
+    public void periodic() {
+        SwerveEstimator.update(getRotation2d(), new SwerveModulePosition[]{frontLeft.getPosition(), frontRight.getPosition(), backLeft.getPosition(), backRight.getPosition()});
+        // var gloabalPose = vision.getEstimatedGlobalPose();
+        // if (vision.hasTarget()) SwerveEstimator.addVisionMeasurement(gloabalPose.get().getFirst(), gloabalPose.get().getSecond());
+        SmartDashboard.putNumber("Robot Heading", getHeading());
+        SmartDashboard.putNumber("Robot Pitch", getPitch());
+        SmartDashboard.putData(field);
+        field.setRobotPose(getPose());
+        backLeft.putDashboard();
+        backRight.putDashboard();
+        frontLeft.putDashboard();
+        frontRight.putDashboard();
     }
 }

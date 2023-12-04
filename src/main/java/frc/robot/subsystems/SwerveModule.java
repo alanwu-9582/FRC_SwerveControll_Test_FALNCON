@@ -1,6 +1,5 @@
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.TalonFXControlMode;
 import com.ctre.phoenix.sensors.CANCoder;
@@ -10,6 +9,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.lib.LazyTalonFX;
+import frc.robot.RobotMap;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.SwerveModuleConstants;
 
@@ -93,14 +93,27 @@ public class SwerveModule {
 
         state = SwerveModuleState.optimize(state, getState().angle);
         driveMotor.set(TalonFXControlMode.PercentOutput, state.speedMetersPerSecond / DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
-        turningMotor.set(ControlMode.PercentOutput, turningPIDController.calculate(getTurningPosition(), state.angle.getRadians()));
+        turningMotor.set(TalonFXControlMode.PercentOutput, turningPIDController.calculate(getTurningPosition(), state.angle.getRadians()));
         SmartDashboard.putString("Swerve[" + absoluteEncoder.getDeviceID() + "] state", state.toString());
         putDashboard();
     }
 
     public void stop() {
-        driveMotor.set(ControlMode.PercentOutput, 0);
-        turningMotor.set(ControlMode.PercentOutput, 0);
+        driveMotor.set(TalonFXControlMode.PercentOutput, 0);
+        turningMotor.set(TalonFXControlMode.PercentOutput, 0);
+    }
+
+    public void lockModule() {
+        switch (turningMotor.getDeviceID()) {
+            case (RobotMap.kFrontLeftTurningMotorPort):
+            case (RobotMap.kBackRightTurningMotorPort):
+                turningMotor.set(TalonFXControlMode.PercentOutput, turningPIDController.calculate(getTurningPosition(), -Math.PI / 4));
+                break;
+            case (RobotMap.kFrontRightTurningMotorPort):
+            case (RobotMap.kBackLeftTurningMotorPort):
+                turningMotor.set(TalonFXControlMode.PercentOutput, turningPIDController.calculate(getTurningPosition(), Math.PI / 4));
+                break;
+        }
     }
 
     public void putDashboard() {
